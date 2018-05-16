@@ -34,7 +34,12 @@ const checkFiles = (files) => {
 
 const uploadFiles = (files) => {
   const formData = new FormData();
-  formData.append('marks', files);
+  // Can't simple attach the file array as the value...
+  // Will have to append one by one
+  // formData.append('marks', files);
+  for (let i = 0; i < files.length; i++) {
+    formData.append('marks', files[i]);
+  }
 
   fetch('/api/images', {
     method: 'POST',
