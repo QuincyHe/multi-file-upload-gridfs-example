@@ -8,8 +8,9 @@ app.use(bodyParser.json());
 
 app.use('/', express.static(path.join(__dirname, 'public')));
 
-app.use('/api/user', (req, res) => {
-  res.json({ name: 'van' });
+app.post('/api/images', (req, res) => {
+  // TODO: get files and save them to gridfs
+  res.json({ status: 'Under Construction huh' });
 });
 
 const port = process.env.PORT || 3000;
