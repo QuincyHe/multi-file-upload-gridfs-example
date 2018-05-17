@@ -45,6 +45,11 @@ app.get('/api/images', (req, res) => {
 app.get('/api/img1', (req, res) => {
   Attachment.findOne({ contentType: 'image/jpeg' }, (err, file) => {
     //TODO: IF ERROR...
+    if (err || !file || file.length < 1) {
+      res.status(404).end();
+      return;
+    }
+
     const objectId = file._id;
     const stream = Attachment.readById(objectId);
     stream.pipe(res);
