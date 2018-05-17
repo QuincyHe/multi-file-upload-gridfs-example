@@ -42,6 +42,14 @@ app.get('/api/images', (req, res) => {
     res.json(files);
   });
 });
+app.get('/api/img1', (req, res) => {
+  Attachment.findOne({ contentType: 'image/jpeg' }, (err, file) => {
+    //TODO: IF ERROR...
+    const objectId = file._id;
+    const stream = Attachment.readById(objectId);
+    stream.pipe(res);
+  });
+})
 
 app.post('/api/images', upload.array('marks', 10086), (req, res) => {
   // TODO: get files and save them to gridfs
