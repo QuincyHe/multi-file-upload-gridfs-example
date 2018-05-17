@@ -65,30 +65,64 @@ app.post('/api/images', upload.array('marks', 10086), (req, res) => {
   //   size: 24 } ]
 
   // Create stream
+  // REMOVE: There is actually no need to avoid duplicates
+  // const readable = new Readable();
+  // readable._read = () => {};
+  // readable.push(req.files[0].buffer);
+  // readable.push(null);
+  // Attachment.find({ filename: req.files[0].originalname }, (err, file) => {
+  //   if (file.length > 0) {
+  //     res.json({ error: 'Already exists!'});
+  //     return;
+  //   }
+
+  //   Attachment.write({
+  //     filename: req.files[0].originalname,
+  //     contentType: req.files[0].mimetype,
+  //   }, readable, (error, createdFile) => {
+  //     if (error) {
+  //       console.error('Error huh: ', error);
+  //     } else {
+  //       console.log(createdFile);
+  //     }
+  //   });
+  
+  
+  //   res.json({ status: 'Under Construction huh' });
+  // });
+  const files = req.files;
+  const dummyReadFunc = () => {};
+
   const readable = new Readable();
-  readable._read = () => {};
-  readable.push(req.files[0].buffer);
-  readable.push(null);
-  Attachment.find({ filename: req.files[0].originalname }, (err, file) => {
-    if (file.length > 0) {
-      res.json({ error: 'Already exists!'});
+  readable._read = dummyReadFunc;
+
+  const writeGridfs = (readable, index, fileArray) => {
+    if (index < fileArray.length) {
+      readable.push(fileArray[index].buffer);
+      readable.push(null);
+    } else {
+      res.json({ status: 'Successfully done huh' });
       return;
     }
-
     Attachment.write({
-      filename: req.files[0].originalname,
-      contentType: req.files[0].mimetype,
+      filename: fileArray[index].originalname,
+      contentType: fileArray[index].mimetype,
     }, readable, (error, createdFile) => {
       if (error) {
         console.error('Error huh: ', error);
+        readable = null;// readable.close();// NO freakin 'close() or destroy()'
+        res.json({ error: `Error while saving ${fileArray[index].originalname}` });
+        return;
       } else {
-        console.log(createdFile);
+        readable = null;// readable.close();// NO freakin 'close() or destroy()'
+        const readableIn = new Readable();
+        readableIn._read = dummyReadFunc;
+        writeGridfs(readableIn, index + 1, fileArray);
       }
     });
-  
-  
-    res.json({ status: 'Under Construction huh' });
-  });
+  };
+
+  writeGridfs(readable, 0, files);
 });
 
 const port = process.env.PORT || 3000;
