@@ -43,12 +43,14 @@ app.get('/api/images', (req, res) => {
   });
 });
 app.get('/api/img1', (req, res) => {
-  Attachment.findOne({ contentType: 'image/jpeg' }, (err, file) => {
+  Attachment.find({ contentType: 'image/jpeg' }, (err, files) => {
     //TODO: IF ERROR...
-    if (err || !file || file.length < 1) {
+    if (err || !files || files.length < 1) {
       res.status(404).end();
       return;
     }
+
+    const file = files[Math.floor(Math.random() * files.length)];
 
     const objectId = file._id;
     const stream = Attachment.readById(objectId);
@@ -106,11 +108,20 @@ app.post('/api/images', upload.array('marks', 10086), (req, res) => {
   const files = req.files;
   const dummyReadFunc = () => {};
 
-  const readable = new Readable();
-  readable._read = dummyReadFunc;
+  // Useless. Readable in Node v6 doesn' have "destroy"
+  const destroyReadable = (readable) => {
+    if (readable.destroy) {
+      readable.destroy();
+      return;
+    }
+    readable.unpipe();
+  };
 
-  const writeGridfs = (readable, index, fileArray) => {
+  const writeGridfs = (index, fileArray) => {
+    let readable = null;
     if (index < fileArray.length) {
+      readable = new Readable();
+      readable._read = dummyReadFunc;
       readable.push(fileArray[index].buffer);
       readable.push(null);
     } else {
@@ -123,19 +134,19 @@ app.post('/api/images', upload.array('marks', 10086), (req, res) => {
     }, readable, (error, createdFile) => {
       if (error) {
         console.error('Error huh: ', error);
-        readable = null;// readable.close();// NO freakin 'close() or destroy()'
+        destroyReadable(readable);
+        readable = null;
         res.json({ error: `Error while saving ${fileArray[index].originalname}` });
         return;
       } else {
-        readable = null;// readable.close();// NO freakin 'close() or destroy()'
-        const readableIn = new Readable();
-        readableIn._read = dummyReadFunc;
-        writeGridfs(readableIn, index + 1, fileArray);
+        destroyReadable(readable);
+        readable = null;
+        writeGridfs(index + 1, fileArray);
       }
     });
   };
 
-  writeGridfs(readable, 0, files);
+  writeGridfs(0, files);
 });
 
 const port = process.env.PORT || 3000;
