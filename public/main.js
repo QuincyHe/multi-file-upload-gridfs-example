@@ -1,3 +1,10 @@
+// ==================================================================================================================
+// This is a demo for uploading image and data file pairs:
+// i.e. 'a.jpg' + 'a.json' + 'b.png' + 'b.json' + ...
+// files is an array of file names selected for uploading.
+// This function `checkFiles` checks whether all images have corresponding data (json) files, respectively.
+// It gives error if there is at least one image that is found with no matching json file.
+
 const checkFiles = (files) => {
   const ret = { error: null };
   if (files.length < 1) {
